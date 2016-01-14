@@ -1,0 +1,118 @@
+% SGR_VCO_OTA_TRAN_SUMMARY.m
+% Suhas G Rao
+% 9th Jan 2016
+% Purpose: Generating PDF from transient curves for VCO_OTA
+% Summary of plots
+
+
+tic;  % Start clock to find execution time
+clc; clear;
+
+
+final_folder_Dir = '/home/user2/suhas/cadence/tsmc55/RESULTS_OCN/VCO_OTA/TRAN/VIN/';
+final_folder_Dir_VCO = '/home/user2/suhas/cadence/tsmc55/RESULTS_OCN/VCO_OTA/TRAN/VIN/';
+final_folder_Dir_GM = '/home/user2/suhas/cadence/tsmc55/RESULTS_OCN/GM_OTA/TRAN/VIN/';
+
+line_width = 1.0; % Linewidth for graphs
+font_size_axis =10; % Fontsize for graph axis
+font_size_supertitle = font_size_axis+2;
+font_size_datatip = font_size_axis-1; % Fontsize for datatip
+supertitle_x_offset = 0.0; % x offset for supertitle for each graph
+supertitle_y_offset = 0.04; 
+
+
+c=[0.2 0.4 0.6 0.8];	% Input Amplitude Corners
+
+for k=1:1:uint8(length(c));
+
+if(c(k)==0.2)
+ylow = 0.4;
+yhigh = 0.8;
+end
+
+if(c(k)==0.4)
+ylow = 0.2;
+yhigh = 1.0;
+end
+
+if(c(k)==0.6)
+ylow = 0.0;
+yhigh = 1.2;
+end
+
+if(c(k)==0.8)
+ylow = 0.0;
+yhigh = 1.2;
+end
+
+
+	b=[5 20 50 200]
+
+		for j=1:1:uint8(length(b));
+
+		if(b(j)==5)
+		t_start=25e-9;
+		t_end=500e-9;
+		end
+
+		if(b(j)==20)
+		t_start=25e-9;
+		t_end=200e-9;
+		end
+
+		if(b(j)==50)
+		t_start=25e-9;
+		t_end=120e-9;
+		end
+
+		if(b(j)==200)
+		t_start = 40e-9;
+		t_end=80e-9;
+		end
+
+		a=[30 45 60 70];
+
+		clf;
+
+		save_pdf_stb = fullfile(final_folder_Dir,sprintf('%1.1fV/',c(k)),'UGB/',sprintf('%dM',b(j)));	
+		delete(strcat(save_pdf_stb, '.pdf'))
+			
+			for i=1:1:length(a)
+
+			warning('off', 'all'); % Turn off all the warnings temporarily (remember to switch them back on at the end)
+
+			M=dlmread(strcat(final_folder_Dir_VCO,sprintf('%1.1fV/',c(k)),'UGB/',sprintf('%dM/',b(j)),sprintf('PM_%d',a(i)),'/tran.txt'),' ',0,0);
+			t1=M(:,1); % time
+			t2=M(:,2); % vip
+			t3=M(:,3); % vin
+			t4=M(:,4); % outp
+			t5=M(:,5); % outn
+			t6=M(:,6); % v_intp
+			t7=M(:,7); % v_intn
+
+			subplot(2,2,i); hold on; box on;       
+			f1=plot(t1,t2,t1,t3,t1,t4,t1,t5,'LineWidth',line_width); grid on; fig_set_text(strcat('@ PM = ',sprintf('%d',a(i))),'time (s)','Amplituede (V)',font_size_axis);
+	
+			ylim([ylow yhigh])
+			xlim([t_start,t_end]);
+
+			makedatatip(f1(3),[find(t4==max(t4))]);
+			makedatatip(f1(4),[find(t5==min(t5))]); 	
+
+			lg=legend('VIP','VIN','VOP','VON');
+			set(lg,'Location','northeast');
+			set(lg,'Box','off')
+			set(lg,'Color','none')
+			set(lg,'FontSize',4)	
+			end
+
+
+		mtit(sprintf('UGB = %dM',b(j)), 'fontsize', font_size_supertitle, 'xoff', supertitle_x_offset, 'yoff', supertitle_y_offset,'FontName','Times','fontweight','bold');
+		
+		export_fig(save_pdf_stb,'-pdf','-append','-nocrop');
+
+		end
+end
+    
+warning('on', 'all'); % Turn all the warnings on again
+toc;  % Stop clock to find execution time
